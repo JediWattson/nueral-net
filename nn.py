@@ -30,20 +30,24 @@ def initial(W,B,I, i, h):
             	rand.append(rs[s])
 		del rs[s]
         W.append(rand)
-        
-    rs = swap[:]
-    for z in range(h):
-        if len(rs) != 0:
-	    s = randint(0,len(rs)-1)
-	    B.append(rs[s])
-            del rs[s]
-            
+
     rs = swap[:]
     for z in range(i):
         if len(rs) != 0:
 	    s = randint(0,len(rs)-1)
     	    I.append(rs[s])
             del rs[s]
+
+    swap = []
+    for x in range(h):
+        swap.append(1.00/float(x+2))        
+    rs = swap[:]
+    for z in range(h):
+        if len(rs) != 0:
+	    s = randint(0,len(rs)-1)
+	    B.append(rs[s])
+            del rs[s]
+
 
     return W, B, I
 
@@ -75,7 +79,7 @@ def msig(A):
     return outSig, dirSig
 
 #backprop with weights
-def bpropw(W,I,y,o,p):
+def bpropw(W,B,I,y,o,p):
     ld = []
     alpha = .1
 
@@ -87,16 +91,17 @@ def bpropw(W,I,y,o,p):
                 else:
                     c = o[inp]
                 W[inp][hid] -= wt*c*p[inp]*alpha
+		B[inp] -= B[inp]*c*alpha
                 ld.append(c)
         else:
             for inp, wt in enumerate(row):
                 W[inp][hid] -= ld[inp]*wt*alpha
                 ld[inp] = c
-    return W
+    return W, B
 
 def driver():
-    inp = 80
-    hid = 250
+    inp = 800
+    hid = 20
     z = 0
     y = [randint(0,inp-1)]
     i = y[0] -1 
@@ -111,24 +116,30 @@ def driver():
     W = []
     Bw = []
     W, Bw, I = initial(W, Bw, I, inp, hid)
-    
+
     U = []
     Bu = []
     U, Bu, o2 = initial(U, Bu,[], hid, inp)
-    
     while i != y[0]:
         z += 1 
 	o1 = mmul(W, I)
-	#o1 = madd(o1, Bw)
+	o1 = madd(o1, Bw)
 	o1, d1 = msig(o1)
+
 	o2 = mmul(U, o1)
-	#o2 = madd(o2, Bu)
+
+	o2 = madd(o2, Bu)
 	o2, d2 = msig(o2)
+
 	i = maxind(o2)
-	print "iteration: ", z, "\nseek: ", y[0], "\nchoice: ", i
-	W = bpropw(W,I,y[0],o1, d1)
-	U = bpropw(U,o1,y[0],o2, d2)
+	W,Bw = bpropw(W,Bw,I,y[0],o1, d1)
+	U,Bu = bpropw(U,Bu,o1,y[0],o2, d2)
+    print "iterations: ", z
 
 if __name__ == "__main__":
-    for x in range(22):
+    for x in range(220):
+	print "step: ", x+1
         driver()
+
+
+
